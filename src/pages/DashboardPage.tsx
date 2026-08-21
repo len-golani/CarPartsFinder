@@ -1,5 +1,5 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "convex/react";
 import { motion } from "framer-motion";
 import {
   Search,
@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { api } from "../../convex/_generated/api";
+import { allParts } from "@/lib/partsData";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -22,10 +22,34 @@ const stagger = {
   visible: { transition: { staggerChildren: 0.08 } },
 };
 
+interface SearchEntry {
+  query: string;
+  resultCount: number;
+  timestamp: number;
+}
+
 export default function DashboardPage() {
-  const favorites = useQuery(api.favorites.list);
-  const searchHistory = useQuery(api.searchHistory.list);
-  const featured = useQuery(api.parts.getFeatured);
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [searchHistory, setSearchHistory] = useState<SearchEntry[]>([]);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("autoparts-favorites");
+      if (stored) setFavorites(JSON.parse(stored));
+    } catch { /* ignore */ }
+
+    try {
+      const stored = localStorage.getItem("autoparts-search-history");
+      if (stored) setSearchHistory(JSON.parse(stored));
+    } catch { /* ignore */ }
+  }, []);
+
+  const favoriteParts = favorites
+    .map((partNumber) => allParts.find((p) => p.partNumber === partNumber))
+    .filter(Boolean)
+    .slice(0, 5);
+
+  const featured = allParts.slice(0, 6);
 
   return (
     <div className="min-h-screen">
@@ -96,18 +120,12 @@ export default function DashboardPage() {
                   <Heart className="h-5 w-5 text-rose-400" />
                   Favorites
                 </h2>
-                {favorites && favorites.length > 0 && (
-                  <span className="text-xs text-muted-foreground">{favorites.length} items</span>
+                {favoriteParts.length > 0 && (
+                  <span className="text-xs text-muted-foreground">{favoriteParts.length} items</span>
                 )}
               </div>
 
-              {favorites === undefined ? (
-                <div className="space-y-3">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="h-20 animate-pulse rounded-xl bg-muted/30" />
-                  ))}
-                </div>
-              ) : favorites.length === 0 ? (
+              {favoriteParts.length === 0 ? (
                 <div className="rounded-xl border border-border/60 bg-card p-8 text-center">
                   <Heart className="mx-auto h-8 w-8 text-muted-foreground/30" />
                   <p className="mt-3 text-sm text-muted-foreground">No favorites yet</p>
@@ -120,24 +138,28 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {favorites.slice(0, 5).map((part) => (
-                    <Link
-                      key={part._id}
-                      to={`/part/${part.slug}`}
-                      className="flex items-center gap-4 rounded-xl border border-border/60 bg-card p-4 transition-all hover:border-primary/30"
-                    >
-                      <img
-                        src={part.imageUrl}
-                        alt={part.name}
-                        className="h-12 w-12 rounded-lg object-cover"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium text-foreground truncate">{part.name}</div>
-                        <div className="text-xs text-muted-foreground">{part.brand}</div>
-                      </div>
-                      <div className="text-sm font-semibold text-primary">${part.price.toFixed(2)}</div>
-                    </Link>
-                  ))}
+                  {favoriteParts.map((part) => {
+                    if (!part) return null;
+                    const partSlug = part.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+                    return (
+                      <Link
+                        key={part.partNumber}
+                        to={`/part/${partSlug}`}
+                        className="flex items-center gap-4 rounded-xl border border-border/60 bg-card p-4 transition-all hover:border-primary/30"
+                      >
+                        <img
+                          src={part.imageUrl}
+                          alt={part.name}
+                          className="h-12 w-12 rounded-lg object-cover"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-foreground truncate">{part.name}</div>
+                          <div className="text-xs text-muted-foreground">{part.brand}</div>
+                        </div>
+                        <div className="text-sm font-semibold text-primary">${part.price.toFixed(2)}</div>
+                      </Link>
+                    );
+                  })}
                 </div>
               )}
             </motion.div>
@@ -151,13 +173,7 @@ export default function DashboardPage() {
                 </h2>
               </div>
 
-              {searchHistory === undefined ? (
-                <div className="space-y-3">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="h-16 animate-pulse rounded-xl bg-muted/30" />
-                  ))}
-                </div>
-              ) : searchHistory.length === 0 ? (
+              {searchHistory.length === 0 ? (
                 <div className="rounded-xl border border-border/60 bg-card p-8 text-center">
                   <Clock className="mx-auto h-8 w-8 text-muted-foreground/30" />
                   <p className="mt-3 text-sm text-muted-foreground">No searches yet</p>
@@ -170,9 +186,9 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {searchHistory.slice(0, 6).map((search) => (
+                  {searchHistory.slice(0, 6).map((search, i) => (
                     <Link
-                      key={search._id}
+                      key={i}
                       to={`/catalog?q=${encodeURIComponent(search.query)}`}
                       className="flex items-center gap-3 rounded-lg border border-border/60 bg-card px-4 py-3 transition-all hover:border-primary/30"
                     >
@@ -197,18 +213,13 @@ export default function DashboardPage() {
               Top Rated Parts
             </h2>
 
-            {featured === undefined ? (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-64 animate-pulse rounded-xl bg-muted/30" />
-                ))}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {featured.slice(0, 6).map((part) => (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {featured.map((part) => {
+                const slug = part.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+                return (
                   <Link
-                    key={part._id}
-                    to={`/part/${part.slug}`}
+                    key={part.partNumber}
+                    to={`/part/${slug}`}
                     className="group rounded-xl border border-border/60 bg-card overflow-hidden transition-all hover:border-primary/30 hover:glow-blue"
                   >
                     <div className="relative aspect-[4/3] overflow-hidden">
@@ -238,9 +249,9 @@ export default function DashboardPage() {
                       </div>
                     </div>
                   </Link>
-                ))}
-              </div>
-            )}
+                );
+              })}
+            </div>
           </motion.div>
         </motion.div>
       </main>

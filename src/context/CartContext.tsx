@@ -1,8 +1,7 @@
 import { createContext, useContext, useReducer, useEffect, type ReactNode } from "react";
-import type { Id } from "../../convex/_generated/dataModel";
 
 export interface CartItem {
-  partId: Id<"parts">;
+  partId: string;
   name: string;
   slug: string;
   price: number;
@@ -19,8 +18,8 @@ interface CartState {
 
 type CartAction =
   | { type: "ADD_ITEM"; payload: Omit<CartItem, "quantity"> & { quantity?: number } }
-  | { type: "REMOVE_ITEM"; payload: { partId: Id<"parts"> } }
-  | { type: "UPDATE_QUANTITY"; payload: { partId: Id<"parts">; quantity: number } }
+  | { type: "REMOVE_ITEM"; payload: { partId: string } }
+  | { type: "UPDATE_QUANTITY"; payload: { partId: string; quantity: number } }
   | { type: "CLEAR_CART" }
   | { type: "LOAD_CART"; payload: CartItem[] };
 
@@ -78,8 +77,8 @@ interface CartContextType {
   tax: number;
   total: number;
   addItem: (item: Omit<CartItem, "quantity"> & { quantity?: number }) => void;
-  removeItem: (partId: Id<"parts">) => void;
-  updateQuantity: (partId: Id<"parts">, quantity: number) => void;
+  removeItem: (partId: string) => void;
+  updateQuantity: (partId: string, quantity: number) => void;
   clearCart: () => void;
 }
 
@@ -116,11 +115,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     dispatch({ type: "ADD_ITEM", payload: item });
   };
 
-  const removeItem = (partId: Id<"parts">) => {
+  const removeItem = (partId: string) => {
     dispatch({ type: "REMOVE_ITEM", payload: { partId } });
   };
 
-  const updateQuantity = (partId: Id<"parts">, quantity: number) => {
+  const updateQuantity = (partId: string, quantity: number) => {
     dispatch({ type: "UPDATE_QUANTITY", payload: { partId, quantity } });
   };
 

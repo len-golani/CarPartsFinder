@@ -1,10 +1,4 @@
-import { action } from "./_generated/server";
-import { v } from "convex/values";
-
-// Real automotive parts database with manufacturer specifications
-// This data is sourced from real manufacturer catalogs and specifications
-
-interface PartData {
+export interface PartData {
   name: string;
   description: string;
   partNumber: string;
@@ -13,13 +7,15 @@ interface PartData {
   price: number;
   originalPrice?: number;
   imageUrl: string;
+  inStock: boolean;
+  rating: number;
+  reviewCount: number;
   specifications: { key: string; value: string }[];
   compatibility: { make: string; models: string[]; years: string }[];
   tags: string[];
   retailerUrl?: string;
 }
 
-// Real brake pad specifications from major manufacturers
 const brakeParts: PartData[] = [
   {
     name: "Ceramic Brake Pads - Front",
@@ -30,6 +26,9 @@ const brakeParts: PartData[] = [
     price: 34.99,
     originalPrice: 42.99,
     imageUrl: "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=400&h=300&fit=crop",
+    inStock: true,
+    rating: 4.8,
+    reviewCount: 342,
     specifications: [
       { key: "Position", value: "Front" },
       { key: "Material", value: "Ceramic" },
@@ -53,6 +52,9 @@ const brakeParts: PartData[] = [
     category: "brakes",
     price: 89.99,
     imageUrl: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=400&h=300&fit=crop",
+    inStock: true,
+    rating: 4.6,
+    reviewCount: 218,
     specifications: [
       { key: "Position", value: "Front" },
       { key: "Diameter", value: "296mm" },
@@ -75,6 +77,9 @@ const brakeParts: PartData[] = [
     category: "brakes",
     price: 29.99,
     imageUrl: "https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=400&h=300&fit=crop",
+    inStock: true,
+    rating: 4.5,
+    reviewCount: 156,
     specifications: [
       { key: "Position", value: "Rear" },
       { key: "Material", value: "Ceramic" },
@@ -91,7 +96,6 @@ const brakeParts: PartData[] = [
   },
 ];
 
-// Real engine parts from major manufacturers
 const engineParts: PartData[] = [
   {
     name: "Synthetic Oil Filter",
@@ -101,6 +105,9 @@ const engineParts: PartData[] = [
     category: "engine",
     price: 12.99,
     imageUrl: "https://images.unsplash.com/photo-1487754180451-c456f719a1fc?w=400&h=300&fit=crop",
+    inStock: true,
+    rating: 4.9,
+    reviewCount: 1203,
     specifications: [
       { key: "Type", value: "Spin-On" },
       { key: "Filter Media", value: "Synthetic Blend" },
@@ -125,12 +132,15 @@ const engineParts: PartData[] = [
     category: "engine",
     price: 24.99,
     imageUrl: "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=400&h=300&fit=crop",
+    inStock: true,
+    rating: 4.7,
+    reviewCount: 876,
     specifications: [
       { key: "Tip Material", value: "Iridium" },
       { key: "Thread Size", value: "14mm" },
       { key: "Reach", value: "26.5mm" },
       { key: "Hex Size", value: "16mm" },
-      { key: "Gap", value: "0.028\"" },
+      { key: "Gap", value: '0.028"' },
       { key: "Heat Range", value: "7" },
     ],
     compatibility: [
@@ -148,6 +158,9 @@ const engineParts: PartData[] = [
     category: "engine",
     price: 54.99,
     imageUrl: "https://images.unsplash.com/photo-1580274455191-1c62238fa333?w=400&h=300&fit=crop",
+    inStock: true,
+    rating: 4.6,
+    reviewCount: 432,
     specifications: [
       { key: "Filter Type", value: "Washable/Reusable" },
       { key: "Material", value: "Oiled Cotton Gaine" },
@@ -165,7 +178,6 @@ const engineParts: PartData[] = [
   },
 ];
 
-// Real suspension parts
 const suspensionParts: PartData[] = [
   {
     name: "Gas-Charged Shock Absorbers",
@@ -175,6 +187,9 @@ const suspensionParts: PartData[] = [
     category: "suspension",
     price: 89.99,
     imageUrl: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=400&h=300&fit=crop",
+    inStock: true,
+    rating: 4.7,
+    reviewCount: 298,
     specifications: [
       { key: "Type", value: "Twin-Tube Gas" },
       { key: "Gas Charge", value: "Nitrogen" },
@@ -191,13 +206,16 @@ const suspensionParts: PartData[] = [
     retailerUrl: "https://www.rockauto.com",
   },
   {
-    name: "Performance Brake Springs",
+    name: "Performance Lowering Springs",
     description: "High-performance coil springs for 1-2 inch lowering. Progressive rate design for sporty handling.",
     partNumber: "SK-8078",
     brand: "Eibach",
     category: "suspension",
     price: 249.99,
     imageUrl: "https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=400&h=300&fit=crop",
+    inStock: true,
+    rating: 4.5,
+    reviewCount: 189,
     specifications: [
       { key: "Type", value: "Progressive Rate" },
       { key: "Drop", value: "1-2 inches" },
@@ -214,7 +232,6 @@ const suspensionParts: PartData[] = [
   },
 ];
 
-// Real exhaust parts
 const exhaustParts: PartData[] = [
   {
     name: "Cat-Back Exhaust System",
@@ -225,11 +242,14 @@ const exhaustParts: PartData[] = [
     price: 449.99,
     originalPrice: 529.99,
     imageUrl: "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=400&h=300&fit=crop",
+    inStock: true,
+    rating: 4.8,
+    reviewCount: 567,
     specifications: [
       { key: "Material", value: "T304 Stainless Steel" },
-      { key: "Pipe Diameter", value: "2.5\"" },
+      { key: "Pipe Diameter", value: '2.5"' },
       { key: "Muffler Type", value: "Straight-Through" },
-      { key: "Tip Diameter", value: "4.0\"" },
+      { key: "Tip Diameter", value: '4.0"' },
       { key: "HP Gain", value: "+5-10 HP" },
       { key: "Warranty", value: "Lifetime" },
     ],
@@ -242,7 +262,6 @@ const exhaustParts: PartData[] = [
   },
 ];
 
-// Real lighting parts
 const lightingParts: PartData[] = [
   {
     name: "LED Headlight Bulbs (Pair)",
@@ -252,6 +271,9 @@ const lightingParts: PartData[] = [
     category: "lighting",
     price: 29.99,
     imageUrl: "https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=400&h=300&fit=crop",
+    inStock: true,
+    rating: 4.7,
+    reviewCount: 934,
     specifications: [
       { key: "Bulb Type", value: "H11" },
       { key: "Lumens", value: "12,000 per pair" },
@@ -270,7 +292,6 @@ const lightingParts: PartData[] = [
   },
 ];
 
-// Real electrical parts
 const electricalParts: PartData[] = [
   {
     name: "AGM Battery Group 35",
@@ -280,6 +301,9 @@ const electricalParts: PartData[] = [
     category: "electrical",
     price: 199.99,
     imageUrl: "https://images.unsplash.com/photo-1611348586804-61bf6c080437?w=400&h=300&fit=crop",
+    inStock: true,
+    rating: 4.8,
+    reviewCount: 456,
     specifications: [
       { key: "Type", value: "AGM" },
       { key: "Group Size", value: "35" },
@@ -297,7 +321,6 @@ const electricalParts: PartData[] = [
   },
 ];
 
-// Real transmission parts
 const transmissionParts: PartData[] = [
   {
     name: "Performance Clutch Kit",
@@ -307,6 +330,9 @@ const transmissionParts: PartData[] = [
     category: "transmission",
     price: 349.99,
     imageUrl: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=400&h=300&fit=crop",
+    inStock: true,
+    rating: 4.5,
+    reviewCount: 178,
     specifications: [
       { key: "Stage", value: "Stage 2" },
       { key: "Torque Rating", value: "400 lb-ft" },
@@ -324,7 +350,6 @@ const transmissionParts: PartData[] = [
   },
 ];
 
-// Real cooling parts
 const coolingParts: PartData[] = [
   {
     name: "Performance Aluminum Radiator",
@@ -334,6 +359,9 @@ const coolingParts: PartData[] = [
     category: "cooling",
     price: 299.99,
     imageUrl: "https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=400&h=300&fit=crop",
+    inStock: true,
+    rating: 4.7,
+    reviewCount: 267,
     specifications: [
       { key: "Material", value: "Aluminum" },
       { key: "Core Thickness", value: "42mm" },
@@ -361,110 +389,3 @@ export const allParts: PartData[] = [
   ...transmissionParts,
   ...coolingParts,
 ];
-
-// Get all parts data
-export const getPartsData = action({
-  args: {},
-  handler: async () => {
-    return allParts;
-  },
-});
-
-// Get parts by category
-export const getPartsByCategory = action({
-  args: { category: v.string() },
-  handler: async (_ctx, args) => {
-    return allParts.filter((p) => p.category === args.category);
-  },
-});
-
-// Search parts
-export const searchParts = action({
-  args: { query: v.string() },
-  handler: async (_ctx, args) => {
-    const q = args.query.toLowerCase();
-    return allParts.filter(
-      (p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.description.toLowerCase().includes(q) ||
-        p.brand.toLowerCase().includes(q) ||
-        p.partNumber.toLowerCase().includes(q) ||
-        p.tags.some((t) => t.toLowerCase().includes(q))
-    );
-  },
-});
-
-// Get unique categories from parts data
-export const getCategories = action({
-  args: {},
-  handler: async () => {
-    const categories = new Map<string, { name: string; description: string; icon: string; count: number }>();
-
-    for (const part of allParts) {
-      const existing = categories.get(part.category);
-      if (existing) {
-        existing.count++;
-      } else {
-        const catInfo = getCategoryInfo(part.category);
-        categories.set(part.category, {
-          name: catInfo.name,
-          description: catInfo.description,
-          icon: catInfo.icon,
-          count: 1,
-        });
-      }
-    }
-
-    return Array.from(categories.entries()).map(([slug, info]) => ({
-      slug,
-      ...info,
-    }));
-  },
-});
-
-function getCategoryInfo(slug: string): { name: string; description: string; icon: string } {
-  const categories: Record<string, { name: string; description: string; icon: string }> = {
-    brakes: {
-      name: "Brakes",
-      description: "Brake pads, rotors, calipers, and brake fluid",
-      icon: "shield",
-    },
-    engine: {
-      name: "Engine",
-      description: "Filters, belts, spark plugs, and engine components",
-      icon: "cpu",
-    },
-    suspension: {
-      name: "Suspension",
-      description: "Shocks, struts, springs, and control arms",
-      icon: "move-vertical",
-    },
-    exhaust: {
-      name: "Exhaust",
-      description: "Mufflers, catalytic converters, and exhaust pipes",
-      icon: "wind",
-    },
-    lighting: {
-      name: "Lighting",
-      description: "Headlights, taillights, LED bars, and bulbs",
-      icon: "lightbulb",
-    },
-    electrical: {
-      name: "Electrical",
-      description: "Batteries, alternators, starters, and wiring",
-      icon: "zap",
-    },
-    transmission: {
-      name: "Transmission",
-      description: "Transmissions, clutch kits, and drivetrain parts",
-      icon: "cog",
-    },
-    cooling: {
-      name: "Cooling",
-      description: "Radiators, water pumps, and thermostats",
-      icon: "thermometer-snowflake",
-    },
-  };
-
-  return categories[slug] || { name: slug, description: "", icon: "package" };
-}

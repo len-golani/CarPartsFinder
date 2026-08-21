@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useAuthActions } from "@convex-dev/auth/react";
 import { motion } from "framer-motion";
 import { Search, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 
 export default function AuthPage() {
-  const { signIn } = useAuthActions();
+  const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const returnTo = searchParams.get("returnTo") || "/dashboard";
@@ -25,21 +25,18 @@ export default function AuthPage() {
     setError("");
 
     try {
+      let success = false;
       if (isSignUp) {
-        await signIn("password", {
-          email,
-          password,
-          name,
-          flow: "signUp",
-        });
+        success = await signUp(email, password, name);
       } else {
-        await signIn("password", {
-          email,
-          password,
-          flow: "signIn",
-        });
+        success = await signIn(email, password);
       }
-      navigate(returnTo, { replace: true });
+
+      if (success) {
+        navigate(returnTo, { replace: true });
+      } else {
+        setError("Invalid credentials. Password must be at least 4 characters.");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Authentication failed. Please try again.");
     } finally {
@@ -64,7 +61,7 @@ export default function AuthPage() {
             <span className="text-gradient">every time</span>
           </h2>
           <p className="mt-4 text-muted-foreground max-w-sm mx-auto">
-            Search by vehicle, browse categories, and save your favorites. It's the easiest way to find car parts.
+            Search by vehicle, browse categories, and save your favorites. It&apos;s the easiest way to find car parts.
           </p>
         </div>
       </div>

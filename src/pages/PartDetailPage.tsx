@@ -1,6 +1,4 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { useQuery, useMutation } from "convex/react";
-import { useConvexAuth } from "convex/react";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -17,12 +15,13 @@ import {
   Plus,
   Minus,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { api } from "../../convex/_generated/api";
+import { allParts } from "@/lib/partsData";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
 
 const fadeUp = {
@@ -33,45 +32,64 @@ const fadeUp = {
 export default function PartDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { isAuthenticated } = useConvexAuth();
+  const { isAuthenticated } = useAuth();
   const { addItem, items: cartItems } = useCart();
   const [quantity, setQuantity] = useState(1);
 
-  const part = useQuery(api.parts.getBySlug, slug ? { slug } : "skip");
-  const isFavorited = useQuery(
-    api.favorites.isFavorited,
-    part ? { partId: part._id } : "skip"
-  );
-  const toggleFavorite = useMutation(api.favorites.toggle);
+  // Find part by slug (derived from name)
+  const part = useMemo(() => {
+    return allParts.find(
+      (p) => p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") === slug
+    );
+  }, [slug]);
 
   // Get related parts from same category
-  const relatedParts = useQuery(
-    api.parts.getByCategory,
-    part ? { categoryId: part.categoryId } : "skip"
-  );
+  const relatedParts = useMemo(() => {
+    if (!part) return [];
+    return allParts
+      .filter((p) => p.category === part.category && p.partNumber !== part.partNumber)
+      .slice(0, 3);
+  }, [part]);
 
-  const handleToggleFavorite = async () => {
+  // Simple local favorites (localStorage)
+  const [favorites, setFavorites] = useState<Set<string>>(() => {
+    try {
+      const stored = localStorage.getItem("autoparts-favorites");
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+
+  const isFavorited = part ? favorites.has(part.partNumber) : false;
+
+  const handleToggleFavorite = () => {
     if (!isAuthenticated) {
       toast.error("Please sign in to save favorites");
-      navigate(`/auth?returnTo=/part/${slug}`);
+      navigate("/auth");
       return;
     }
     if (!part) return;
 
-    try {
-      const result = await toggleFavorite({ partId: part._id });
-      toast.success(result ? "Added to favorites" : "Removed from favorites");
-    } catch {
-      toast.error("Failed to update favorites");
+    const newFavorites = new Set(favorites);
+    if (newFavorites.has(part.partNumber)) {
+      newFavorites.delete(part.partNumber);
+      toast.success("Removed from favorites");
+    } else {
+      newFavorites.add(part.partNumber);
+      toast.success("Added to favorites");
     }
+    setFavorites(newFavorites);
+    localStorage.setItem("autoparts-favorites", JSON.stringify([...newFavorites]));
   };
 
   const handleAddToCart = () => {
     if (!part) return;
+    const slug = part.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
     addItem({
-      partId: part._id,
+      partId: part.partNumber,
       name: part.name,
-      slug: part.slug,
+      slug,
       price: part.price,
       originalPrice: part.originalPrice,
       imageUrl: part.imageUrl,
@@ -87,36 +105,15 @@ export default function PartDetailPage() {
     });
   };
 
-  const cartItemQuantity = cartItems.find((i) => i.partId === part?._id)?.quantity ?? 0;
+  const cartItemQuantity = cartItems.find((i) => i.partId === part?.partNumber)?.quantity ?? 0;
 
   if (part === undefined) {
     return (
       <div className="min-h-screen">
         <Navbar />
-        <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-          <div className="animate-pulse space-y-6">
-            <div className="h-8 w-32 rounded bg-muted/30" />
-            <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-              <div className="aspect-square rounded-xl bg-muted/30" />
-              <div className="space-y-4">
-                <div className="h-6 w-48 rounded bg-muted/30" />
-                <div className="h-10 w-full rounded bg-muted/30" />
-                <div className="h-20 w-full rounded bg-muted/30" />
-              </div>
-            </div>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
-  if (part === null) {
-    return (
-      <div className="min-h-screen">
-        <Navbar />
         <main className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 text-center">
           <h1 className="text-2xl font-bold text-foreground">Part not found</h1>
-          <p className="mt-2 text-muted-foreground">The part you're looking for doesn't exist.</p>
+          <p className="mt-2 text-muted-foreground">The part you&apos;re looking for doesn&apos;t exist.</p>
           <Link
             to="/catalog"
             className="mt-6 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
@@ -129,8 +126,6 @@ export default function PartDetailPage() {
     );
   }
 
-  const related = relatedParts?.filter((p) => p._id !== part._id).slice(0, 3) ?? [];
-
   return (
     <div className="min-h-screen">
       <Navbar />
@@ -141,7 +136,7 @@ export default function PartDetailPage() {
           <nav className="flex items-center gap-1.5 text-sm text-muted-foreground mb-6">
             <Link to="/catalog" className="hover:text-primary transition-colors">Catalog</Link>
             <ChevronRight className="h-3.5 w-3.5" />
-            <Link to={`/catalog?category=${part.brand.toLowerCase()}`} className="hover:text-primary transition-colors">
+            <Link to={`/catalog?category=${part.category}`} className="hover:text-primary transition-colors">
               {part.brand}
             </Link>
             <ChevronRight className="h-3.5 w-3.5" />
@@ -172,7 +167,7 @@ export default function PartDetailPage() {
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <span>{part.brand}</span>
                 <span>·</span>
-                <span className="font-mono text-xs">{part.sku}</span>
+                <span className="font-mono text-xs">{part.partNumber}</span>
               </div>
               <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
                 {part.name}
@@ -366,7 +361,7 @@ export default function PartDetailPage() {
         )}
 
         {/* Related Parts */}
-        {related.length > 0 && (
+        {relatedParts.length > 0 && (
           <motion.div
             initial="hidden"
             whileInView="visible"
@@ -376,34 +371,37 @@ export default function PartDetailPage() {
           >
             <h2 className="text-lg font-semibold text-foreground mb-4">Related Parts</h2>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {related.map((rp) => (
-                <Link
-                  key={rp._id}
-                  to={`/part/${rp.slug}`}
-                  className="group rounded-xl border border-border/60 bg-card overflow-hidden transition-all hover:border-primary/30 hover:glow-blue"
-                >
-                  <div className="relative aspect-[4/3] overflow-hidden">
-                    <img
-                      src={rp.imageUrl}
-                      alt={rp.name}
-                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
-                  </div>
-                  <div className="p-4">
-                    <div className="text-xs text-muted-foreground">{rp.brand}</div>
-                    <div className="mt-1 text-sm font-medium text-foreground group-hover:text-primary transition-colors line-clamp-1">
-                      {rp.name}
+              {relatedParts.map((rp) => {
+                const rpSlug = rp.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+                return (
+                  <Link
+                    key={rp.partNumber}
+                    to={`/part/${rpSlug}`}
+                    className="group rounded-xl border border-border/60 bg-card overflow-hidden transition-all hover:border-primary/30 hover:glow-blue"
+                  >
+                    <div className="relative aspect-[4/3] overflow-hidden">
+                      <img
+                        src={rp.imageUrl}
+                        alt={rp.name}
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
                     </div>
-                    <div className="mt-2 flex items-center justify-between">
-                      <div className="flex items-center gap-1">
-                        <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                        <span className="text-sm font-medium text-foreground">{rp.rating}</span>
+                    <div className="p-4">
+                      <div className="text-xs text-muted-foreground">{rp.brand}</div>
+                      <div className="mt-1 text-sm font-medium text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                        {rp.name}
                       </div>
-                      <span className="text-sm font-bold text-primary">${rp.price.toFixed(2)}</span>
+                      <div className="mt-2 flex items-center justify-between">
+                        <div className="flex items-center gap-1">
+                          <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                          <span className="text-sm font-medium text-foreground">{rp.rating}</span>
+                        </div>
+                        <span className="text-sm font-bold text-primary">${rp.price.toFixed(2)}</span>
+                      </div>
                     </div>
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                );
+              })}
             </div>
           </motion.div>
         )}

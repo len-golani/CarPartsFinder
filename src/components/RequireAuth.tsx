@@ -1,9 +1,9 @@
-import { useConvexAuth } from "convex/react";
 import { Navigate, useSearchParams } from "react-router-dom";
 import { type ReactNode } from "react";
+import { useAuth } from "@/context/AuthContext";
 
 export default function RequireAuth({ children }: { children: ReactNode }) {
-  const { isAuthenticated, isLoading } = useConvexAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const [searchParams] = useSearchParams();
   const returnTo = searchParams.get("returnTo");
 
