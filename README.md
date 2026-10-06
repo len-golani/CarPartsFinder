@@ -2,6 +2,8 @@
 
 Find the right car part for your vehicle — browse a catalog, decode a VIN, and walk through a full shopping flow. Live at **https://len-golani.github.io/CarPartsFinder/**
 
+> **Not production ready — demo only.** This is a front-end architecture showcase, built to practise real patterns (routing, guarded routes, state, a live third-party API) before production work. There is **no backend, no database, no real authentication and no payment processing**. The `/admin` area is a **UI demo of an admin role** — its credentials are a placeholder, not a secret, and must never be reused. Do not put real customer data anywhere near this project.
+
 ## What it does
 
 - **Catalog** — browse and filter a parts catalog by category, price and availability
